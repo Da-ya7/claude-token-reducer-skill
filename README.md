@@ -1,7 +1,13 @@
 # token-reducer
 Cut log noise before Claude ever sees it.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Stars](https://img.shields.io/github/stars/dhayalan/token-reducer?style=flat&label=Stars)](https://github.com/dhayalan/token-reducer) [![Issues](https://img.shields.io/github/issues/dhayalan/token-reducer?style=flat&label=Issues)](https://github.com/dhayalan/token-reducer/issues) [![Built for Claude](https://img.shields.io/badge/Built%20for%20Claude-111111?style=flat&logo=anthropic&logoColor=white)](https://claude.ai)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Stars](https://img.shields.io/github/stars/Da-ya7/claude-token-reducer-skill?style=flat&label=Stars)](https://github.com/Da-ya7/claude-token-reducer-skill) [![Issues](https://img.shields.io/github/issues/Da-ya7/claude-token-reducer-skill?style=flat&label=Issues)](https://github.com/Da-ya7/claude-token-reducer-skill/issues) [![Built for Claude](https://img.shields.io/badge/Built%20for%20Claude-111111?style=flat&logo=anthropic&logoColor=white)](https://claude.ai)
+
+## Live demo
+
+[![token-reducer demo preview](docs/preview.svg)](docs/index.html)
+
+Open the 3D collapse demo on GitHub Pages: [docs/index.html](docs/index.html)
 
 ## Before / After
 

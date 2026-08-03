@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">token-reducer demo preview</title>
+  <desc id="desc">A dark neon illustration of raw log lines collapsing into a smaller compressed cluster.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#05070c"/>
+      <stop offset="55%" stop-color="#0a1020"/>
+      <stop offset="100%" stop-color="#04050a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#4cf2d1" stop-opacity="0.28"/>
+      <stop offset="55%" stop-color="#4cf2d1" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#4cf2d1" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#70a7ff"/>
+      <stop offset="100%" stop-color="#4cf2d1"/>
+    </linearGradient>
+    <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.7 0" result="c"/>
+      <feMerge>
+        <feMergeNode in="c"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <pattern id="grid" width="70" height="70" patternUnits="userSpaceOnUse">
+      <path d="M70 0H0V70" fill="none" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#grid)"/>
+  <circle cx="800" cy="450" r="360" fill="url(#glow)" filter="url(#blur)"/>
+
+  <g opacity="0.92">
+    <rect x="150" y="130" width="300" height="24" rx="12" fill="#131b2d"/>
+    <rect x="150" y="180" width="360" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="215" width="420" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="250" width="380" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="285" width="440" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="320" width="400" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="355" width="470" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="390" width="340" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="425" width="420" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="460" width="385" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="495" width="450" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="530" width="360" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="565" width="430" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="600" width="390" height="18" rx="9" fill="#1b253a"/>
+    <rect x="150" y="635" width="440" height="18" rx="9" fill="#1b253a"/>
+  </g>
+
+  <g filter="url(#softGlow)">
+    <g fill="#2f3b54">
+      <rect x="150" y="160" width="54" height="54" rx="8"/>
+      <rect x="220" y="160" width="54" height="54" rx="8"/>
+      <rect x="290" y="160" width="54" height="54" rx="8"/>
+      <rect x="360" y="160" width="54" height="54" rx="8"/>
+      <rect x="430" y="160" width="54" height="54" rx="8"/>
+      <rect x="500" y="160" width="54" height="54" rx="8"/>
+      <rect x="185" y="230" width="54" height="54" rx="8"/>
+      <rect x="255" y="230" width="54" height="54" rx="8"/>
+      <rect x="325" y="230" width="54" height="54" rx="8"/>
+      <rect x="395" y="230" width="54" height="54" rx="8"/>
+      <rect x="465" y="230" width="54" height="54" rx="8"/>
+      <rect x="535" y="230" width="54" height="54" rx="8"/>
+      <rect x="150" y="300" width="54" height="54" rx="8"/>
+      <rect x="220" y="300" width="54" height="54" rx="8"/>
+      <rect x="290" y="300" width="54" height="54" rx="8"/>
+      <rect x="360" y="300" width="54" height="54" rx="8"/>
+      <rect x="430" y="300" width="54" height="54" rx="8"/>
+      <rect x="500" y="300" width="54" height="54" rx="8"/>
+      <rect x="185" y="370" width="54" height="54" rx="8"/>
+      <rect x="255" y="370" width="54" height="54" rx="8"/>
+      <rect x="325" y="370" width="54" height="54" rx="8"/>
+      <rect x="395" y="370" width="54" height="54" rx="8"/>
+      <rect x="465" y="370" width="54" height="54" rx="8"/>
+      <rect x="535" y="370" width="54" height="54" rx="8"/>
+    </g>
+
+    <g opacity="0.9">
+      <rect x="690" y="390" width="36" height="36" rx="9" fill="#70a7ff"/>
+      <rect x="738" y="360" width="36" height="36" rx="9" fill="#4cf2d1"/>
+      <rect x="786" y="402" width="36" height="36" rx="9" fill="#70a7ff"/>
+      <rect x="834" y="372" width="36" height="36" rx="9" fill="#4cf2d1"/>
+      <rect x="882" y="388" width="36" height="36" rx="9" fill="#70a7ff"/>
+      <rect x="930" y="362" width="36" height="36" rx="9" fill="#4cf2d1"/>
+      <rect x="714" y="442" width="36" height="36" rx="9" fill="#4cf2d1"/>
+      <rect x="762" y="428" width="36" height="36" rx="9" fill="#70a7ff"/>
+      <rect x="810" y="444" width="36" height="36" rx="9" fill="#4cf2d1"/>
+      <rect x="858" y="426" width="36" height="36" rx="9" fill="#70a7ff"/>
+      <rect x="906" y="444" width="36" height="36" rx="9" fill="#4cf2d1"/>
+      <rect x="954" y="424" width="36" height="36" rx="9" fill="#70a7ff"/>
+      <rect x="690" y="494" width="36" height="36" rx="9" fill="#70a7ff"/>
+      <rect x="738" y="476" width="36" height="36" rx="9" fill="#4cf2d1"/>
+      <rect x="786" y="496" width="36" height="36" rx="9" fill="#70a7ff"/>
+      <rect x="834" y="478" width="36" height="36" rx="9" fill="#4cf2d1"/>
+      <rect x="882" y="498" width="36" height="36" rx="9" fill="#70a7ff"/>
+      <rect x="930" y="474" width="36" height="36" rx="9" fill="#4cf2d1"/>
+    </g>
+  </g>
+
+  <path d="M620 410C680 370 720 350 770 350" fill="none" stroke="url(#accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="1 20" opacity="0.8"/>
+  <path d="M620 450C690 450 725 450 790 450" fill="none" stroke="url(#accent)" stroke-width="14" stroke-linecap="round" opacity="0.8"/>
+  <path d="M620 490C680 530 725 548 770 548" fill="none" stroke="url(#accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="1 20" opacity="0.8"/>
+
+  <g filter="url(#softGlow)">
+    <text x="1080" y="325" fill="#eff7ff" font-family="Trebuchet MS, Segoe UI, sans-serif" font-size="52" font-weight="700">812 lines</text>
+    <text x="1080" y="415" fill="#4cf2d1" font-family="Trebuchet MS, Segoe UI, sans-serif" font-size="72" font-weight="800">→</text>
+    <text x="1080" y="505" fill="#eff7ff" font-family="Trebuchet MS, Segoe UI, sans-serif" font-size="52" font-weight="700">96 lines</text>
+    <rect x="1078" y="545" width="280" height="54" rx="27" fill="#4cf2d1" fill-opacity="0.12" stroke="#4cf2d1" stroke-opacity="0.35"/>
+    <text x="1218" y="581" text-anchor="middle" fill="#4cf2d1" font-family="Trebuchet MS, Segoe UI, sans-serif" font-size="28" font-weight="700">88% cut</text>
+  </g>
+
+  <circle cx="1270" cy="450" r="140" fill="#4cf2d1" fill-opacity="0.08" filter="url(#blur)"/>
+  <circle cx="1270" cy="450" r="76" fill="#4cf2d1" fill-opacity="0.18"/>
+  <g opacity="0.9" filter="url(#softGlow)">
+    <rect x="1230" y="410" width="28" height="28" rx="7" fill="#4cf2d1"/>
+    <rect x="1266" y="390" width="28" height="28" rx="7" fill="#70a7ff"/>
+    <rect x="1302" y="418" width="28" height="28" rx="7" fill="#4cf2d1"/>
+    <rect x="1248" y="446" width="28" height="28" rx="7" fill="#70a7ff"/>
+    <rect x="1284" y="452" width="28" height="28" rx="7" fill="#4cf2d1"/>
+  </g>
+</svg>
