@@ -1,9 +1,15 @@
 # token-reducer
 Cut log noise before Claude ever sees it.
 
+[![CI](https://github.com/Da-ya7/claude-token-reducer-skill/actions/workflows/test.yml/badge.svg)](https://github.com/Da-ya7/claude-token-reducer-skill/actions/workflows/test.yml)
+
 ## Security notes
 
 This script is not a sandbox. Redaction is heuristic and best-effort, so it can miss secrets or over-redact useful debug data. Do not feed it untrusted file paths from an automated or agent-driven pipeline unless you add a separate allowlist layer first.
+
+## Project maturity
+
+This is a new project with little history. Redaction is a heuristic, not a guarantee, so read [scripts/compress.py](scripts/compress.py) before running it on sensitive logs. Issues and PRs are welcome for review.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Stars](https://img.shields.io/github/stars/Da-ya7/claude-token-reducer-skill?style=flat&label=Stars)](https://github.com/Da-ya7/claude-token-reducer-skill) [![Issues](https://img.shields.io/github/issues/Da-ya7/claude-token-reducer-skill?style=flat&label=Issues)](https://github.com/Da-ya7/claude-token-reducer-skill/issues) [![Built for Claude](https://img.shields.io/badge/Built%20for%20Claude-111111?style=flat&logo=anthropic&logoColor=white)](https://claude.ai)
 

@@ -8,6 +8,7 @@ Security changelog:
 - Added input size limits and long-line caps to reduce memory abuse and regex worst cases on hostile logs.
 - Added file/path validation plus a hard block for symlinks that escape the current working directory unless explicitly allowed.
 - Added ANSI escape stripping so terminal control sequences never reach compressed output.
+- Added an opt-out entropy fallback pass and an optional allowed-directory boundary for automated callers.
 
 Usage:
     python compress.py < input.txt
@@ -20,6 +21,7 @@ Prints compressed text to stdout, plus a one-line stats summary to stderr:
 
 import sys
 import os
+import math
 import re
 import argparse
 from pathlib import Path
@@ -55,13 +57,15 @@ ANSI_RE = re.compile(
     r"\x1B\[[0-?]*[ -/]*[@-~]|\x1B\][^\x1b\x07]*(?:\x07|\x1b\\)|\x1B[@-Z\\-_]"
 )
 
+HIGH_ENTROPY_RE = re.compile(r"[A-Za-z0-9+/=_-]{20,}")
+
 SENSITIVE_FIELD_RE = re.compile(
     r'(?i)(\b(?:password|passwd|pwd|token|secret|api[_-]?key|access[_-]?token|client[_-]?secret|session[_-]?id)\b\s*[:=]\s*)(["\']?)([^\s,;"\']+)(["\']?)'
 )
 JSON_SENSITIVE_FIELD_RE = re.compile(
     r'(?i)(["\'](?:password|passwd|pwd|token|secret|api[_-]?key|access[_-]?token|client[_-]?secret|session[_-]?id)["\']\s*:\s*)(["\'])(.*?)(\2)'
 )
-JWT_RE = re.compile(r'(?<![A-Za-z0-9_-])([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)(?![A-Za-z0-9_-])')
+JWT_RE = re.compile(r'(?<![A-Za-z0-9_-])([A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{10,})(?![A-Za-z0-9_-])')
 JWT_VALUE_RE = re.compile(r'^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$')
 BASIC_SECRET_REPLACEMENTS = [
     (re.compile(r'(?i)\bBearer\s+[A-Za-z0-9._~+/=-]{8,}\b'), 'Bearer [REDACTED]'),
@@ -114,13 +118,46 @@ def redact_line(line: str) -> str:
     return line
 
 
-def sanitize_text(text: str, redact: bool = True, max_regex_line: int = MAX_REGEX_LINE) -> str:
+def shannon_entropy(value: str) -> float:
+    if not value:
+        return 0.0
+
+    counts = {}
+    for char in value:
+        counts[char] = counts.get(char, 0) + 1
+
+    length = len(value)
+    entropy = 0.0
+    for count in counts.values():
+        probability = count / length
+        entropy -= probability * math.log2(probability)
+    return entropy
+
+
+def redact_high_entropy_line(line: str, threshold: float = 4.0) -> str:
+    def replace(match: re.Match[str]) -> str:
+        candidate = match.group(0)
+        if shannon_entropy(candidate) > threshold:
+            return "[REDACTED_HIGH_ENTROPY]"
+        return candidate
+
+    return HIGH_ENTROPY_RE.sub(replace, line)
+
+
+def sanitize_text(
+    text: str,
+    redact: bool = True,
+    max_regex_line: int = MAX_REGEX_LINE,
+    entropy_redact: bool = True,
+) -> str:
     text = strip_ansi(text)
     lines = []
     for raw_line in text.splitlines():
         line = raw_line if len(raw_line) <= max_regex_line else raw_line[: max_regex_line - 3] + "..."
         if redact:
             line = redact_line(line)
+            if entropy_redact:
+                line = redact_high_entropy_line(line)
         lines.append(line)
     return "\n".join(lines)
 
@@ -137,7 +174,11 @@ def warn(message: str) -> None:
     print(f"[compress] warning: {message}", file=sys.stderr)
 
 
-def validate_input_path(path_str: str, allow_symlink_escape: bool = False) -> Path:
+def validate_input_path(
+    path_str: str,
+    allow_symlink_escape: bool = False,
+    allowed_dirs: list[str] | None = None,
+) -> Path:
     path = Path(path_str).expanduser()
     if not path.exists():
         raise FileNotFoundError(f"input file does not exist: {path}")
@@ -146,15 +187,30 @@ def validate_input_path(path_str: str, allow_symlink_escape: bool = False) -> Pa
     if not os.access(path, os.R_OK):
         raise PermissionError(f"input file is not readable: {path}")
 
+    resolved_path = path.resolve()
+
+    if allowed_dirs:
+        resolved_allowed_dirs = []
+        for directory in allowed_dirs:
+            allowed_path = Path(directory).expanduser()
+            if not allowed_path.exists():
+                raise FileNotFoundError(f"allowed directory does not exist: {allowed_path}")
+            if not allowed_path.is_dir():
+                raise ValueError(f"allowed path is not a directory: {allowed_path}")
+            resolved_allowed_dirs.append(allowed_path.resolve())
+        if not any(within_directory(resolved_path, allowed_directory) for allowed_directory in resolved_allowed_dirs):
+            raise PermissionError(
+                f"refusing to read input outside allowed directories: {resolved_path}"
+            )
+
     if path.is_symlink():
-        resolved = path.resolve()
         cwd = Path.cwd().resolve()
-        if not within_directory(resolved, cwd):
+        if not within_directory(resolved_path, cwd):
             if allow_symlink_escape:
-                warn(f"following symlink outside current working directory: {path} -> {resolved}")
+                warn(f"following symlink outside current working directory: {path} -> {resolved_path}")
             else:
                 raise PermissionError(
-                    f"refusing to read symlink outside current working directory: {path} -> {resolved}"
+                    f"refusing to read symlink outside current working directory: {path} -> {resolved_path}"
                 )
 
     return path
@@ -182,9 +238,18 @@ def read_stream_capped(stream, max_bytes: int) -> tuple[str, bool]:
     return data.decode("utf-8", errors="replace"), truncated
 
 
-def read_input_text(file_path: str | None, max_bytes: int, allow_symlink_escape: bool = False) -> str:
+def read_input_text(
+    file_path: str | None,
+    max_bytes: int,
+    allow_symlink_escape: bool = False,
+    allowed_dirs: list[str] | None = None,
+) -> str:
     if file_path:
-        path = validate_input_path(file_path, allow_symlink_escape=allow_symlink_escape)
+        path = validate_input_path(
+            file_path,
+            allow_symlink_escape=allow_symlink_escape,
+            allowed_dirs=allowed_dirs,
+        )
         with path.open("rb") as handle:
             text, _ = read_stream_capped(handle, max_bytes)
         return text
@@ -314,7 +379,9 @@ def main():
     ap.add_argument("--context", type=int, default=2, help="Stack frames to keep at head/tail of long tracebacks")
     ap.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES, help="Maximum input bytes to read before truncating")
     ap.add_argument("--no-redact", action="store_true", help="Disable secret redaction before compression")
+    ap.add_argument("--no-entropy-redact", action="store_true", help="Disable the entropy-based fallback redaction layer")
     ap.add_argument("--allow-symlink-escape", action="store_true", help="Allow input symlinks that resolve outside the current working directory")
+    ap.add_argument("--allowed-dir", action="append", default=[], help="Restrict file input to one or more allowed directories")
     args = ap.parse_args()
 
     if args.max_bytes <= 0:
@@ -324,8 +391,18 @@ def main():
     if args.context < 0:
         raise ValueError("--context must be zero or a positive integer")
 
-    text = read_input_text(args.file, args.max_bytes, allow_symlink_escape=args.allow_symlink_escape)
-    prepared = sanitize_text(text, redact=not args.no_redact, max_regex_line=MAX_REGEX_LINE)
+    text = read_input_text(
+        args.file,
+        args.max_bytes,
+        allow_symlink_escape=args.allow_symlink_escape,
+        allowed_dirs=args.allowed_dir or None,
+    )
+    prepared = sanitize_text(
+        text,
+        redact=not args.no_redact,
+        max_regex_line=MAX_REGEX_LINE,
+        entropy_redact=not args.no_entropy_redact,
+    )
 
     compressed, stats = compress(prepared, max_len=args.max_line, keep_context=args.context)
     print(compressed)
