@@ -5,9 +5,16 @@ Cut log noise before Claude ever sees it.
 
 ## Live demo
 
-[![token-reducer demo preview](docs/preview.svg)](docs/index.html)
+
+<a href="docs/index.html">
+  <img src="docs/preview.svg" alt="token-reducer live 3D demo preview" />
+</a>
+
+**[Open the live 3D demo](docs/index.html)**
 
 Open the 3D collapse demo on GitHub Pages: [docs/index.html](docs/index.html)
+
+Preview image only. The actual interactive 3D scene runs in the linked page above.
 
 ## Before / After
 
