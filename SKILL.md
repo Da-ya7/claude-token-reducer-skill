@@ -42,10 +42,17 @@ Apply in this order, only as far as needed to remove noise without losing signal
 
 1. Save the pasted/uploaded raw content to a file (e.g. `/tmp/raw.txt`).
 2. Run `scripts/compress.py` on it:
-   ```bash
+```bash
    python3 scripts/compress.py /tmp/raw.txt
-   ```
-   Useful flags: `--max-line N` (default 200, truncate long lines), `--context N` (default 2, stack frames kept at head/tail of long tracebacks).
+```
+   Core flags: `--max-line N` (default 200, truncate long lines), `--context N` (default 2, stack frames kept at head/tail of long tracebacks).
+
+   Security / safety flags:
+   - `--max-bytes N` — hard cap on input size read before processing (guards against huge/runaway files).
+   - `--no-redact` — disable secret masking (masking is **ON by default**, see below).
+   - `--no-entropy-redact` — disable the high-entropy-string heuristic pass specifically, while keeping pattern-based redaction (API keys, Bearer tokens, JWTs) on.
+   - `--allow-symlink-escape` — permit following symlinks that point outside the input dir (off by default, blocked to avoid reading unintended files).
+   - `--allowed-dir PATH` — restrict the script to only reading files under `PATH`; use this for automated/unattended runs.
 3. Read the compressed stdout output (not the original file) for your analysis. The script prints a one-line stats summary to stderr (`[compress] 812 -> 96 lines (88% cut)`) — you can mention this if useful.
 4. If a follow-up question needs a specific detail that got cut (a stack frame, a specific duplicate occurrence), go back to the original file and pull just that piece — don't reprocess the whole thing.
 5. If the input isn't in a file yet (e.g. it's plain text in the conversation with no natural file form), write it to a scratch file first, then run the script — don't skip straight to manual compression unless the script genuinely can't apply (e.g. non-text/binary content).
@@ -58,9 +65,12 @@ Apply in this order, only as far as needed to remove noise without losing signal
 - **Group**: collapses runs of passing/`ok` test lines into a single count line; collapses non-adjacent repeated lines (e.g. a warning scattered through a log) into one instance + total count
 - **Truncate**: caps line length; keeps only head/tail frames of long tracebacks, omitting the middle
 - **Dedupe**: collapses consecutive identical lines into `line (xN)`
+- **Redact** (default ON): masks common secret patterns — API keys, Bearer/auth tokens, JWTs, and high-entropy strings — before the rest of the pipeline runs. Heuristic, not a guarantee; sanity-check output before pasting it somewhere sensitive. Disable with `--no-redact` (both) or `--no-entropy-redact` (entropy pass only).
 
-It's a starting heuristic, not perfect — always sanity-check that nothing load-bearing (the actual error, the actual failing assertion) got cut.
+It's a starting heuristic, not perfect — always sanity-check that nothing load-bearing (the actual error, the actual failing assertion) got cut, and that redaction didn't over- or under-mask.
 
 ## Note on scope
 
 This skill works on text already in the conversation (pasted or uploaded). It does not run commands on the user's machine — for that, real command-output compression on their own terminal, point them to the `rtk` CLI tool (https://github.com/rtk-ai/rtk), which does this same filter/group/truncate/dedupe job automatically for local shell commands.
+
+Security posture: file reading is bounded by `--max-bytes` and `--allowed-dir`, symlink-escape is blocked by default, and secret redaction runs before other processing. These are heuristic safeguards for a token-compression tool, not a security audit — treat compressed output as reduced-risk, not risk-free.
