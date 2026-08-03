@@ -6,7 +6,7 @@ compress.py — apply filter / group / truncate / dedupe to noisy text
 Security changelog:
 - Added opt-out secret redaction so common API keys, bearer tokens, password/token fields, and high-entropy strings are masked before compression.
 - Added input size limits and long-line caps to reduce memory abuse and regex worst cases on hostile logs.
-- Added file/path validation plus a warning when following symlinks outside the current working directory.
+- Added file/path validation plus a hard block for symlinks that escape the current working directory unless explicitly allowed.
 - Added ANSI escape stripping so terminal control sequences never reach compressed output.
 
 Usage:
@@ -61,13 +61,14 @@ SENSITIVE_FIELD_RE = re.compile(
 JSON_SENSITIVE_FIELD_RE = re.compile(
     r'(?i)(["\'](?:password|passwd|pwd|token|secret|api[_-]?key|access[_-]?token|client[_-]?secret|session[_-]?id)["\']\s*:\s*)(["\'])(.*?)(\2)'
 )
+JWT_RE = re.compile(r'(?<![A-Za-z0-9_-])([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)(?![A-Za-z0-9_-])')
+JWT_VALUE_RE = re.compile(r'^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$')
 BASIC_SECRET_REPLACEMENTS = [
     (re.compile(r'(?i)\bBearer\s+[A-Za-z0-9._~+/=-]{8,}\b'), 'Bearer [REDACTED]'),
     (re.compile(r'(?i)\bsk-[A-Za-z0-9]{16,}\b'), '[REDACTED]'),
     (re.compile(r'(?i)\bghp_[A-Za-z0-9]{20,}\b'), '[REDACTED]'),
     (re.compile(r'(?i)\bAKIA[0-9A-Z]{16}\b'), '[REDACTED]'),
     (re.compile(r'(?i)\bxox[baprs]-[A-Za-z0-9-]{10,}\b'), '[REDACTED]'),
-    (re.compile(r'\b[A-Za-z0-9]{32,}\b'), '[REDACTED]'),
 ]
 
 
@@ -95,8 +96,19 @@ def strip_ansi(text: str) -> str:
 
 
 def redact_line(line: str) -> str:
-    line = JSON_SENSITIVE_FIELD_RE.sub(r'\1\2[REDACTED]\4', line)
-    line = SENSITIVE_FIELD_RE.sub(r'\1\2[REDACTED]\4', line)
+    def redact_json_field(match: re.Match[str]) -> str:
+        value = match.group(3)
+        replacement = '[REDACTED_JWT]' if JWT_VALUE_RE.fullmatch(value) else '[REDACTED]'
+        return f"{match.group(1)}{match.group(2)}{replacement}{match.group(4)}"
+
+    def redact_kv_field(match: re.Match[str]) -> str:
+        value = match.group(3)
+        replacement = '[REDACTED_JWT]' if JWT_VALUE_RE.fullmatch(value) else '[REDACTED]'
+        return f"{match.group(1)}{match.group(2)}{replacement}{match.group(4)}"
+
+    line = JSON_SENSITIVE_FIELD_RE.sub(redact_json_field, line)
+    line = SENSITIVE_FIELD_RE.sub(redact_kv_field, line)
+    line = JWT_RE.sub('[REDACTED_JWT]', line)
     for pattern, replacement in BASIC_SECRET_REPLACEMENTS:
         line = pattern.sub(replacement, line)
     return line
@@ -125,7 +137,7 @@ def warn(message: str) -> None:
     print(f"[compress] warning: {message}", file=sys.stderr)
 
 
-def validate_input_path(path_str: str) -> Path:
+def validate_input_path(path_str: str, allow_symlink_escape: bool = False) -> Path:
     path = Path(path_str).expanduser()
     if not path.exists():
         raise FileNotFoundError(f"input file does not exist: {path}")
@@ -138,7 +150,12 @@ def validate_input_path(path_str: str) -> Path:
         resolved = path.resolve()
         cwd = Path.cwd().resolve()
         if not within_directory(resolved, cwd):
-            warn(f"following symlink outside current working directory: {path} -> {resolved}")
+            if allow_symlink_escape:
+                warn(f"following symlink outside current working directory: {path} -> {resolved}")
+            else:
+                raise PermissionError(
+                    f"refusing to read symlink outside current working directory: {path} -> {resolved}"
+                )
 
     return path
 
@@ -165,9 +182,9 @@ def read_stream_capped(stream, max_bytes: int) -> tuple[str, bool]:
     return data.decode("utf-8", errors="replace"), truncated
 
 
-def read_input_text(file_path: str | None, max_bytes: int) -> str:
+def read_input_text(file_path: str | None, max_bytes: int, allow_symlink_escape: bool = False) -> str:
     if file_path:
-        path = validate_input_path(file_path)
+        path = validate_input_path(file_path, allow_symlink_escape=allow_symlink_escape)
         with path.open("rb") as handle:
             text, _ = read_stream_capped(handle, max_bytes)
         return text
@@ -297,6 +314,7 @@ def main():
     ap.add_argument("--context", type=int, default=2, help="Stack frames to keep at head/tail of long tracebacks")
     ap.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES, help="Maximum input bytes to read before truncating")
     ap.add_argument("--no-redact", action="store_true", help="Disable secret redaction before compression")
+    ap.add_argument("--allow-symlink-escape", action="store_true", help="Allow input symlinks that resolve outside the current working directory")
     args = ap.parse_args()
 
     if args.max_bytes <= 0:
@@ -306,7 +324,7 @@ def main():
     if args.context < 0:
         raise ValueError("--context must be zero or a positive integer")
 
-    text = read_input_text(args.file, args.max_bytes)
+    text = read_input_text(args.file, args.max_bytes, allow_symlink_escape=args.allow_symlink_escape)
     prepared = sanitize_text(text, redact=not args.no_redact, max_regex_line=MAX_REGEX_LINE)
 
     compressed, stats = compress(prepared, max_len=args.max_line, keep_context=args.context)
