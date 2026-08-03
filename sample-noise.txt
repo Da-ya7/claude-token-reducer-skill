@@ -1,0 +1,15 @@
+﻿Resolving package metadata...
+Downloading wheels 12%|█████▌                          | 122/1014
+Downloading wheels 13%|█████▋                          | 133/1014
+Downloading wheels 13%|█████▋                          | 133/1014
+----------------------------------------
+PASS test_login_flow ... ok
+PASS test_login_flow ... ok
+PASS test_login_flow ... ok
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+Traceback (most recent call last):
+  File "/workspace/app/tests/test_parser.py", line 184, in test_parse
+    assert output[812] == "done"
+RuntimeError: failed to parse line 812

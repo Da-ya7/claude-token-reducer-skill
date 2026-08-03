@@ -1,0 +1,151 @@
+﻿Resolving package metadata...
+Downloading wheels 1%|█████▌                          | 101/1014
+Downloading wheels 2%|█████▌                          | 102/1014
+Downloading wheels 3%|█████▌                          | 103/1014
+Downloading wheels 4%|█████▌                          | 104/1014
+Downloading wheels 5%|█████▌                          | 105/1014
+Downloading wheels 6%|█████▌                          | 106/1014
+Downloading wheels 7%|█████▌                          | 107/1014
+Downloading wheels 8%|█████▌                          | 108/1014
+Downloading wheels 9%|█████▌                          | 109/1014
+Downloading wheels 10%|█████▌                          | 110/1014
+Downloading wheels 11%|█████▌                          | 111/1014
+Downloading wheels 12%|█████▌                          | 112/1014
+Downloading wheels 13%|█████▌                          | 113/1014
+Downloading wheels 14%|█████▌                          | 114/1014
+Downloading wheels 15%|█████▌                          | 115/1014
+Downloading wheels 16%|█████▌                          | 116/1014
+Downloading wheels 17%|█████▌                          | 117/1014
+Downloading wheels 18%|█████▌                          | 118/1014
+Downloading wheels 19%|█████▌                          | 119/1014
+Downloading wheels 20%|█████▌                          | 120/1014
+Downloading wheels 21%|█████▌                          | 121/1014
+Downloading wheels 22%|█████▌                          | 122/1014
+Downloading wheels 23%|█████▌                          | 123/1014
+Downloading wheels 24%|█████▌                          | 124/1014
+Downloading wheels 25%|█████▌                          | 125/1014
+Downloading wheels 26%|█████▌                          | 126/1014
+Downloading wheels 27%|█████▌                          | 127/1014
+Downloading wheels 28%|█████▌                          | 128/1014
+Downloading wheels 29%|█████▌                          | 129/1014
+Downloading wheels 30%|█████▌                          | 130/1014
+Downloading wheels 31%|█████▌                          | 131/1014
+Downloading wheels 32%|█████▌                          | 132/1014
+Downloading wheels 33%|█████▌                          | 133/1014
+Downloading wheels 34%|█████▌                          | 134/1014
+Downloading wheels 35%|█████▌                          | 135/1014
+Downloading wheels 36%|█████▌                          | 136/1014
+Downloading wheels 37%|█████▌                          | 137/1014
+Downloading wheels 38%|█████▌                          | 138/1014
+Downloading wheels 39%|█████▌                          | 139/1014
+Downloading wheels 40%|█████▌                          | 140/1014
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+PASS integration_test ... ok
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+warning: cache miss for line 812
+----------------------------------------
+Traceback (most recent call last):
+  File "/workspace/app/tests/test_parser.py", line 184, in test_parse
+    assert output[812] == "done"
+RuntimeError: failed to parse line 812
