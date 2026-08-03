@@ -10,9 +10,9 @@ Cut log noise before Claude ever sees it.
   <img src="docs/preview.svg" alt="token-reducer live 3D demo preview" />
 </a>
 
-**[Open the live 3D demo](docs/index.html)**
+**[Open the live 3D demo](https://da-ya7.github.io/claude-token-reducer-skill/)**
 
-Open the 3D collapse demo on GitHub Pages: [docs/index.html](docs/index.html)
+Open the 3D collapse demo on GitHub Pages: [https://da-ya7.github.io/claude-token-reducer-skill/](https://da-ya7.github.io/claude-token-reducer-skill/)
 
 Preview image only. The actual interactive 3D scene runs in the linked page above.
 
