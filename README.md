@@ -1,8 +1,6 @@
 # token-reducer
 Cut log noise before Claude ever sees it.
 
-[![CI](https://github.com/Da-ya7/claude-token-reducer-skill/actions/workflows/test.yml/badge.svg)](https://github.com/Da-ya7/claude-token-reducer-skill/actions/workflows/test.yml)
-
 ## Security notes
 
 This script is not a sandbox. Redaction is heuristic and best-effort, so it can miss secrets or over-redact useful debug data. Do not feed it untrusted file paths from an automated or agent-driven pipeline unless you add a separate allowlist layer first.
