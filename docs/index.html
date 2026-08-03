@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive token-reducer demo for compressing noisy logs into signal.">
+  <title>token-reducer | Raw logs collapse into signal</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #05070c;
+      --bg-soft: #0a1020;
+      --panel: rgba(8, 14, 28, 0.72);
+      --panel-border: rgba(90, 255, 229, 0.16);
+      --text: #eff7ff;
+      --muted: rgba(239, 247, 255, 0.72);
+      --accent: #4cf2d1;
+      --accent-2: #70a7ff;
+      --accent-3: #9eff7c;
+      --shadow: rgba(0, 0, 0, 0.48);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(76, 242, 209, 0.12), transparent 34%),
+        radial-gradient(circle at 82% 26%, rgba(112, 167, 255, 0.16), transparent 28%),
+        radial-gradient(circle at 50% 84%, rgba(76, 242, 209, 0.07), transparent 32%),
+        linear-gradient(180deg, #05070c 0%, #080d18 54%, #04050a 100%);
+      color: var(--text);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: radial-gradient(circle at center, rgba(0,0,0,0.95), transparent 78%);
+      opacity: 0.8;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .scene::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at center, transparent 46%, rgba(3, 5, 10, 0.35) 100%);
+    }
+
+    .hud {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+      align-items: start;
+      gap: 24px;
+      padding: 28px;
+    }
+
+    .brand,
+    .counter,
+    .callout,
+    .scroll-chip,
+    .cta {
+      pointer-events: auto;
+    }
+
+    .brand {
+      align-self: start;
+      max-width: 680px;
+      padding: 8px 0;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border: 1px solid rgba(76, 242, 209, 0.18);
+      border-radius: 999px;
+      background: rgba(8, 14, 28, 0.55);
+      color: var(--accent);
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      box-shadow: 0 16px 50px var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    h1 {
+      margin: 18px 0 14px;
+      font-size: clamp(3rem, 7vw, 6.8rem);
+      line-height: 0.92;
+      letter-spacing: -0.06em;
+      text-wrap: balance;
+      text-shadow: 0 0 42px rgba(76, 242, 209, 0.12);
+    }
+
+    .lede {
+      max-width: 40rem;
+      font-size: clamp(1.03rem, 1.75vw, 1.25rem);
+      line-height: 1.7;
+      color: var(--muted);
+      margin: 0 0 22px;
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 15px 22px;
+      border: 0;
+      border-radius: 999px;
+      color: #031015;
+      background: linear-gradient(135deg, var(--accent), #f0ffeb 120%);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      box-shadow: 0 20px 55px rgba(76, 242, 209, 0.28);
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .cta:hover { transform: translateY(-2px); box-shadow: 0 24px 65px rgba(76, 242, 209, 0.36); }
+
+    .callout {
+      margin-top: 20px;
+      max-width: 36rem;
+      padding: 16px 18px;
+      border: 1px solid rgba(112, 167, 255, 0.16);
+      border-radius: 18px;
+      background: rgba(7, 11, 22, 0.48);
+      color: rgba(239, 247, 255, 0.84);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 18px 50px var(--shadow);
+    }
+
+    .counter {
+      justify-self: end;
+      width: min(100%, 390px);
+      padding: 20px 20px 18px;
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(10, 16, 32, 0.82), rgba(6, 10, 20, 0.88));
+      box-shadow: 0 26px 70px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(20px);
+    }
+
+    .counter-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: rgba(239, 247, 255, 0.56);
+    }
+
+    .counter-value {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: -0.08em;
+      line-height: 0.92;
+    }
+
+    .counter-value .big {
+      font-size: clamp(3.1rem, 7vw, 5.8rem);
+      color: white;
+    }
+
+    .counter-value .arrow {
+      color: var(--accent);
+      font-size: clamp(1.4rem, 3vw, 2rem);
+    }
+
+    .counter-value .small {
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      color: #dffcf7;
+    }
+
+    .cut {
+      margin-top: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(76, 242, 209, 0.1);
+      color: var(--accent);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .meter {
+      margin-top: 18px;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+
+    .meter > span {
+      display: block;
+      height: 100%;
+      width: 12%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent-2), var(--accent));
+      box-shadow: 0 0 24px rgba(76, 242, 209, 0.52);
+    }
+
+    .bottom-rail {
+      position: fixed;
+      left: 28px;
+      bottom: 24px;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      pointer-events: none;
+    }
+
+    .scroll-chip {
+      pointer-events: auto;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(7, 11, 22, 0.58);
+      color: rgba(239, 247, 255, 0.72);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+      font-size: 0.92rem;
+    }
+
+    .progress-track {
+      width: min(34vw, 360px);
+      height: 2px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.14);
+      box-shadow: 0 0 24px rgba(76, 242, 209, 0.2);
+    }
+
+    .progress-track > span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, transparent, var(--accent), #d8fff7);
+    }
+
+    .scroll-stage {
+      position: relative;
+      z-index: 1;
+      height: 250vh;
+    }
+
+    .sticky-shell {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      width: 100%;
+    }
+
+    .intro-card {
+      position: absolute;
+      right: 28px;
+      bottom: 28px;
+      width: min(92vw, 420px);
+      padding: 18px 18px 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(8, 14, 28, 0.54);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.42);
+    }
+
+    .intro-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: white;
+      font-size: 1.05rem;
+    }
+
+    .intro-card p {
+      margin: 0;
+      color: rgba(239, 247, 255, 0.72);
+      line-height: 1.6;
+      font-size: 0.96rem;
+    }
+
+    .hint {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent);
+      font-size: 0.82rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 980px) {
+      .hud {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .counter {
+        justify-self: start;
+      }
+
+      .bottom-rail {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        flex-wrap: wrap;
+      }
+
+      .progress-track {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hud { padding: 18px; }
+      .brand { padding-top: 2px; }
+      .intro-card {
+        left: 16px;
+        right: 16px;
+        bottom: 86px;
+        width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene"><canvas id="stage"></canvas></div>
+
+  <div class="hud">
+    <section class="brand" aria-label="token-reducer demo copy">
+      <div class="eyebrow">token-reducer / Claude skill</div>
+      <h1>Noise collapses. Signal survives.</h1>
+      <p class="lede">A wall of raw log cubes falls apart into a compact neon cluster, the same way filter, group, truncate, and dedupe turn 812 noisy lines into 96 lines Claude can actually use.</p>
+      <button class="cta" id="collapse-btn" type="button">Collapse the log wall</button>
+      <div class="callout">Scroll the page or click the button. The scene, the counter, and the compression ratio all move together.</div>
+    </section>
+
+    <aside class="counter" aria-live="polite">
+      <div class="counter-label">
+        <span>Compression</span>
+        <span>Scroll-driven demo</span>
+      </div>
+      <div class="counter-value" aria-label="812 lines reduced to 96 lines">
+        <span class="big" id="lines-in">812</span>
+        <span class="arrow">→</span>
+        <span class="small" id="lines-out">96</span>
+      </div>
+      <div class="cut" id="cut-label">88% cut</div>
+      <div class="meter" aria-hidden="true"><span id="meter-fill"></span></div>
+    </aside>
+  </div>
+
+  <div class="bottom-rail">
+    <div class="scroll-chip">Scroll to compress</div>
+    <div class="progress-track" aria-hidden="true"><span id="scroll-progress"></span></div>
+  </div>
+
+  <section class="scroll-stage" id="scroll-stage" aria-label="interactive compression stage">
+    <div class="sticky-shell">
+      <div class="intro-card">
+        <strong>Raw logs become a smaller answer.</strong>
+        <p>Drag to orbit, scroll to collapse, and watch the wall of cubes condense into a tighter cluster with the duplicate noise stripped out.</p>
+        <div class="hint">Orbit controls enabled</div>
+      </div>
+    </div>
+  </section>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const canvas = document.getElementById('stage');
+    const linesInEl = document.getElementById('lines-in');
+    const linesOutEl = document.getElementById('lines-out');
+    const cutLabelEl = document.getElementById('cut-label');
+    const meterFillEl = document.getElementById('meter-fill');
+    const progressEl = document.getElementById('scroll-progress');
+    const collapseBtn = document.getElementById('collapse-btn');
+    const scrollStage = document.getElementById('scroll-stage');
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x05070c, 16, 42);
+
+    const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 120);
+    camera.position.set(0.5, 2.8, 22.5);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.enablePan = false;
+    controls.minDistance = 12;
+    controls.maxDistance = 34;
+    controls.minPolarAngle = 0.7;
+    controls.maxPolarAngle = 1.55;
+
+    const ambient = new THREE.AmbientLight(0x9cc7ff, 0.62);
+    scene.add(ambient);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.25);
+    keyLight.position.set(-8, 12, 10);
+    scene.add(keyLight);
+
+    const accentLight = new THREE.PointLight(0x4cf2d1, 24, 50, 2);
+    accentLight.position.set(7, 1.2, 6);
+    scene.add(accentLight);
+
+    const blueLight = new THREE.PointLight(0x70a7ff, 14, 42, 2);
+    blueLight.position.set(-7.5, 5.5, 8);
+    scene.add(blueLight);
+
+    const cubeGeometry = new THREE.BoxGeometry(0.72, 0.72, 0.72);
+    const clusterGeometry = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+    const rawCubes = [];
+    const rawStart = [];
+    const rawTargets = [];
+    const clusterCubes = [];
+    const clusterStart = [];
+    const clusterPositions = [];
+
+    const rawCols = 18;
+    const rawRows = 16;
+    const rawCount = rawCols * rawRows;
+    const clusterCols = 12;
+    const clusterRows = 8;
+    const clusterCount = clusterCols * clusterRows;
+
+    function makeMaterial(color, emissive, opacity) {
+      return new THREE.MeshStandardMaterial({
+        color,
+        emissive,
+        emissiveIntensity: 1.1,
+        roughness: 0.32,
+        metalness: 0.48,
+        transparent: true,
+        opacity,
+      });
+    }
+
+    function buildVector(x, y, z) {
+      return new THREE.Vector3(x, y, z);
+    }
+
+    function createRawWall() {
+      for (let row = 0; row < rawRows; row += 1) {
+        for (let col = 0; col < rawCols; col += 1) {
+          const index = row * rawCols + col;
+          const startX = -13.2 + col * 0.68 + (Math.random() - 0.5) * 0.12;
+          const startY = 6.2 - row * 0.78 + (Math.random() - 0.5) * 0.16;
+          const startZ = (Math.random() - 0.5) * 2.6;
+          const targetIndex = index % clusterCount;
+          const targetCol = targetIndex % clusterCols;
+          const targetRow = Math.floor(targetIndex / clusterCols);
+          const targetX = 6.2 + targetCol * 0.56 + (Math.random() - 0.5) * 0.08;
+          const targetY = 2.0 - targetRow * 0.54 + (Math.random() - 0.5) * 0.08;
+          const targetZ = (Math.random() - 0.5) * 0.72;
+
+          const mesh = new THREE.Mesh(cubeGeometry, makeMaterial(0x151d2e, 0x09131f, 0.96));
+          mesh.position.set(startX, startY, startZ);
+          mesh.scale.setScalar(0.92 + Math.random() * 0.12);
+          scene.add(mesh);
+
+          rawCubes.push(mesh);
+          rawStart.push(buildVector(startX, startY, startZ));
+          rawTargets.push(buildVector(targetX, targetY, targetZ));
+        }
+      }
+    }
+
+    function createCluster() {
+      for (let row = 0; row < clusterRows; row += 1) {
+        for (let col = 0; col < clusterCols; col += 1) {
+          const x = 6.25 + col * 0.56 + (Math.random() - 0.5) * 0.1;
+          const y = 2.0 - row * 0.54 + (Math.random() - 0.5) * 0.08;
+          const z = (Math.random() - 0.5) * 0.72;
+          const mesh = new THREE.Mesh(clusterGeometry, makeMaterial(0x4cf2d1, 0x8ffef0, 0));
+          mesh.position.set(x + (Math.random() - 0.5) * 0.7, y + (Math.random() - 0.5) * 0.7, z + (Math.random() - 0.5) * 1.2);
+          mesh.scale.setScalar(0.03);
+          scene.add(mesh);
+
+          clusterCubes.push(mesh);
+          clusterStart.push(buildVector(mesh.position.x, mesh.position.y, mesh.position.z));
+          clusterPositions.push(buildVector(x, y, z));
+        }
+      }
+    }
+
+    function createCoreGlow() {
+      const glowGeometry = new THREE.SphereGeometry(1.9, 32, 32);
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: 0x4cf2d1,
+        transparent: true,
+        opacity: 0.08,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+      glow.position.set(8.4, -0.15, 0.2);
+      scene.add(glow);
+      return glow;
+    }
+
+    function createParticleField() {
+      const points = 180;
+      const positions = new Float32Array(points * 3);
+      for (let i = 0; i < points; i += 1) {
+        positions[i * 3] = (Math.random() - 0.5) * 54;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 30;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 26;
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const material = new THREE.PointsMaterial({
+        color: 0x8ffef0,
+        size: 0.06,
+        transparent: true,
+        opacity: 0.52,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const pointsMesh = new THREE.Points(geometry, material);
+      scene.add(pointsMesh);
+      return pointsMesh;
+    }
+
+    createRawWall();
+    createCluster();
+    const coreGlow = createCoreGlow();
+    const particles = createParticleField();
+
+    let progressTarget = 0;
+    let progress = 0;
+    let stageRange = 1;
+    let stageTop = 0;
+    const inputLines = 812;
+    const outputLines = 96;
+
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function ease(value) {
+      return value < 0.5 ? 4 * value * value * value : 1 - Math.pow(-2 * value + 2, 3) / 2;
+    }
+
+    function updateStageMetrics() {
+      const rect = scrollStage.getBoundingClientRect();
+      stageTop = rect.top + window.scrollY;
+      stageRange = Math.max(1, scrollStage.offsetHeight - window.innerHeight);
+    }
+
+    function setTargetFromScroll() {
+      const raw = (window.scrollY - stageTop) / stageRange;
+      progressTarget = clamp(raw, 0, 1);
+    }
+
+    function updateCounter(value) {
+      const eased = ease(value);
+      const linesIn = inputLines;
+      const linesOut = Math.round(inputLines - eased * (inputLines - outputLines));
+      const cut = Math.round(100 * (1 - linesOut / inputLines));
+
+      linesInEl.textContent = String(linesIn);
+      linesOutEl.textContent = String(linesOut);
+      cutLabelEl.textContent = `${cut}% cut`;
+      meterFillEl.style.width = `${cut}%`;
+      progressEl.style.width = `${cut}%`;
+
+      rawCubes.forEach((cube, index) => {
+        const start = rawStart[index];
+        const target = rawTargets[index];
+        cube.position.lerpVectors(start, target, eased * 0.96);
+        const shrink = 1 - eased * 0.82;
+        cube.scale.setScalar(0.92 * shrink + 0.06);
+        cube.material.opacity = 0.96 - eased * 0.9;
+        cube.material.emissiveIntensity = 1.1 - eased * 0.45;
+        cube.rotation.x = eased * 0.28;
+        cube.rotation.y = eased * 0.34;
+      });
+
+      clusterCubes.forEach((cube, index) => {
+        const start = clusterStart[index];
+        const target = clusterPositions[index];
+        cube.position.lerpVectors(start, target, eased);
+        const pulse = 0.06 + eased * 0.94;
+        cube.scale.setScalar(pulse);
+        cube.material.opacity = eased;
+        cube.material.emissiveIntensity = 1.1 + eased * 1.6;
+      });
+
+      coreGlow.material.opacity = 0.08 + eased * 0.34;
+      coreGlow.scale.setScalar(1 + eased * 1.18);
+      accentLight.intensity = 18 + eased * 24;
+      blueLight.intensity = 10 + eased * 8;
+      particles.rotation.y = eased * 0.14;
+      particles.rotation.x = eased * 0.05;
+    }
+
+    function animate() {
+      progress += (progressTarget - progress) * 0.085;
+      updateCounter(progress);
+      controls.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    function handleResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight, false);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      updateStageMetrics();
+      setTargetFromScroll();
+    }
+
+    collapseBtn.addEventListener('click', () => {
+      progressTarget = 1;
+      window.scrollTo({ top: stageTop + stageRange, behavior: 'smooth' });
+    });
+
+    window.addEventListener('scroll', setTargetFromScroll, { passive: true });
+    window.addEventListener('resize', handleResize);
+
+    window.scrollTo(0, 0);
+    updateStageMetrics();
+    progress = 0;
+    progressTarget = 0;
+    setTargetFromScroll();
+    window.addEventListener('load', () => {
+      window.scrollTo(0, 0);
+      progress = 0;
+      progressTarget = 0;
+      updateStageMetrics();
+      setTargetFromScroll();
+    }, { once: true });
+    animate();
+  </script>
+</body>
+</html>
