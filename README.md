@@ -57,8 +57,12 @@ Logs are token-eating garbage until you strip them down. token-reducer keeps the
 ## Install
 
 ```bash
-curl -fsSL <placeholder-raw-url> | bash
+git clone https://github.com/Da-ya7/claude-token-reducer-skill.git
+cd claude-token-reducer-skill
+
+python scripts/compress.py --help
 ```
+
 
 ## Usage
 
